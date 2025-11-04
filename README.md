@@ -1,21 +1,20 @@
-# AI-Powered Resume Analyzer
+# Resume Analyzer
 
-A full-stack web application that uses AI to analyze resumes and provide personalized feedback, improvements, and keyword optimization suggestions. Built with React, FastAPI, PostgreSQL, and OpenAI GPT-4.
+A full-stack web application that uses ChatGPT to provide feedback on resumes and produce improved versions in PDFs. Built with React, FastAPI, PostgreSQL, and OpenAI GPT-4.
 
 ## Features
 
-- 🔐 **Full Authentication System**: JWT-based authentication with secure password hashing
-- 📄 **PDF Resume Upload**: Drag-and-drop interface for uploading resume PDFs
-- 🤖 **AI-Powered Analysis**: GPT-4 powered resume analysis with:
+- **Full Authentication System**: JWT-based authentication with secure password hashing
+- **PDF Resume Upload**: Drag-and-drop interface for uploading resume PDFs
+- **AI-Powered Analysis**: GPT-4 powered resume analysis with:
   - Overall score (0-100)
-  - Structure and formatting feedback
-  - Keyword optimization suggestions
-  - ATS (Applicant Tracking System) optimization tips
-  - Personalized improvement recommendations
-- 📝 **Improved Resume Generation**: Get an AI-generated improved version of your resume
-- 📥 **PDF Export**: Export the improved resume as a professionally formatted PDF
-- 🐳 **Dockerized**: Fully containerized multi-service application
-- 🎨 **Modern UI**: Beautiful, responsive interface built with Chakra UI
+  - Structure and formatting
+  - Keyword suggestions
+  - ATS optimization tips
+  - Personalized improvements
+- **Improved Resume Generation**: Get an improved version of your resume
+- **PDF Export**: Export the improved resume as a professionally formatted PDF
+- **Dockerized**: Fully containerized app
 
 ## Tech Stack
 
@@ -58,7 +57,7 @@ A full-stack web application that uses AI to analyze resumes and provide persona
     │     │
 ┌───▼──┐ ┌▼─────────┐
 │  DB  │ │  OpenAI  │
-│ PG   │ │   API    │
+│  PG  │ │   API    │
 └──────┘ └──────────┘
 ```
 
@@ -81,12 +80,7 @@ A full-stack web application that uses AI to analyze resumes and provide persona
    ```
 
 3. **Edit `.env` file** with your configuration:
-   ```env
-   DB_PASSWORD=your_secure_password_here
-   SECRET_KEY=your_jwt_secret_key_here
-   OPENAI_API_KEY=sk-your-openai-api-key-here
-   ```
-   
+
    **Note**: Generate a secure `SECRET_KEY` using:
    ```bash
    python -c "import secrets; print(secrets.token_urlsafe(32))"
@@ -104,11 +98,11 @@ A full-stack web application that uses AI to analyze resumes and provide persona
 
 ## Usage
 
-1. **Register/Login**: Create an account or sign in with existing credentials
+1. **Register/Login**: Create an account or sign in
 2. **Upload Resume**: Drag and drop your resume PDF or click to browse
 3. **Review Analysis**: View your resume score and detailed feedback
 4. **Edit Improved Version**: Review and customize the AI-generated improved resume
-5. **Export PDF**: Download the improved resume as a professional PDF
+5. **Export PDF**: Download the improved resume as a PDF
 
 ## API Endpoints
 
@@ -166,14 +160,6 @@ resume_analyzer/
 └── README.md
 ```
 
-## Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DB_PASSWORD` | PostgreSQL database password | Yes |
-| `SECRET_KEY` | JWT secret key for token signing | Yes |
-| `OPENAI_API_KEY` | OpenAI API key for GPT-4 | Yes |
-
 ## Security Features
 
 - Password hashing with bcrypt
@@ -183,39 +169,6 @@ resume_analyzer/
 - SQL injection protection (SQLAlchemy ORM)
 - Environment variable validation
 
-## Features for Recruiters
-
-This project demonstrates:
-
-- ✅ Full-stack development skills (React + FastAPI)
-- ✅ Database design and ORM usage (PostgreSQL + SQLAlchemy)
-- ✅ RESTful API design with OpenAPI documentation
-- ✅ Authentication and authorization (JWT)
-- ✅ AI/ML integration (OpenAI GPT-4 API)
-- ✅ File processing (PDF parsing and generation)
-- ✅ Containerization (Docker multi-container app)
-- ✅ Modern UI/UX design (Chakra UI)
-- ✅ Security best practices
-
-## Future Enhancements
-
-- [ ] Support for multiple resume formats (DOCX, TXT)
-- [ ] Resume history and versioning
-- [ ] Role-specific analysis templates
-- [ ] ATS compatibility checker
-- [ ] Resume comparison tool
-- [ ] Email notifications
-- [ ] Dark mode toggle
-- [ ] Multi-language support
-
 ## License
 
 MIT License
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## Contact
-
-For questions or feedback, please open an issue in the repository.
