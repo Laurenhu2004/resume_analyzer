@@ -1,0 +1,110 @@
+import json
+from typing import Optional
+from openai import OpenAI
+from app.core.config import settings
+
+
+def get_openai_client():
+    """Get OpenAI client instance."""
+    return OpenAI(api_key=settings.OPENAI_API_KEY)
+
+
+async def analyze_resume(resume_text: str, target_role: Optional[str] = None) -> dict:
+    """
+    Analyze resume using OpenAI GPT-4.
+    Returns structured analysis with score, feedback, and improvements.
+    """
+    system_prompt = """You are an expert resume reviewer with years of experience in HR and recruitment. 
+    Analyze resumes objectively and provide actionable, constructive feedback. Focus on:
+    1. Structure and formatting clarity
+    2. Keyword optimization for ATS systems
+    3. Content quality and impact
+    4. Tailoring for specific roles
+    Be specific, professional, and encouraging."""
+    
+    user_prompt = f"""Please analyze the following resume and provide detailed feedback. 
+    
+    Resume content:
+    {resume_text}
+    """
+    
+    if target_role:
+        user_prompt += f"\n\nTarget role: {target_role}"
+    
+    user_prompt += """
+    
+    Provide your analysis in the following JSON format:
+    {
+        "score": <integer 0-100>,
+        "structure_feedback": "<detailed feedback on resume structure, formatting, sections, and length>",
+        "keyword_analysis": "<analysis of keywords, industry terms, and ATS optimization suggestions>",
+        "improvements": ["<improvement 1>", "<improvement 2>", "<improvement 3>"],
+        "improved_content": "<complete improved version of the resume as plain text, maintaining professional format with sections, headings, and bullet points>"
+    }
+    
+    Make sure the improved_content is well-formatted and ready to use as a resume.
+    """
+    
+    try:
+        client = get_openai_client()
+        content = None
+        # Use gpt-4o or gpt-4-turbo which support JSON mode
+        # Fallback to gpt-4 if those aren't available, but parse JSON manually
+        try:
+            response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.7,
+                response_format={"type": "json_object"}
+            )
+            content = response.choices[0].message.content
+        except Exception:
+            # Fallback to gpt-4-turbo
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4-turbo",
+                    messages=[
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": user_prompt}
+                    ],
+                    temperature=0.7,
+                    response_format={"type": "json_object"}
+                )
+                content = response.choices[0].message.content
+            except Exception:
+                # Fallback to regular gpt-4 without JSON mode
+                user_prompt_with_json = user_prompt + "\n\nIMPORTANT: Respond ONLY with valid JSON, no other text before or after."
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": system_prompt + " You must respond with valid JSON only."},
+                        {"role": "user", "content": user_prompt_with_json}
+                    ],
+                    temperature=0.7
+                )
+                content = response.choices[0].message.content
+        
+        # Clean the content in case there's markdown formatting
+        content = content.strip()
+        if content.startswith("```json"):
+            content = content[7:]
+        if content.startswith("```"):
+            content = content[3:]
+        if content.endswith("```"):
+            content = content[:-3]
+        content = content.strip()
+        
+        analysis = json.loads(content)
+        
+        return analysis
+    
+    except json.JSONDecodeError as e:
+        error_msg = f"Failed to parse OpenAI response as JSON: {str(e)}"
+        if content:
+            error_msg += f". Response: {content[:200]}"
+        raise Exception(error_msg)
+    except Exception as e:
+        raise Exception(f"OpenAI API error: {str(e)}")
