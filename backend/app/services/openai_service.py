@@ -42,15 +42,43 @@ async def analyze_resume(resume_text: str, target_role: Optional[str] = None) ->
         "improved_content": "<complete improved version of the resume as plain text, maintaining professional format with sections, headings, and bullet points>"
     }
     
+    CRITICAL: Ensure consistency between your "improvements" list and "improved_content":
+    - If you mention adding a professional summary in "improvements", you MUST actually include it in "improved_content" with proper formatting
+    - If you mention any other additions or changes in "improvements", they MUST be reflected in "improved_content"
+    - The "improved_content" should be a complete, ready-to-use resume that incorporates all suggested improvements
+    
     CRITICAL: Format the improved_content as follows for proper PDF generation:
     1. First line: Full name only (no contact info)
     2. Second line: Contact information separated by " | " (e.g., "email@example.com | (555) 123-4567 | City, State | linkedin.com/in/name")
-    3. Optional third line: Professional summary or objective (if applicable)
-    4. Section headers: ALL CAPS on separate lines (e.g., "EXPERIENCE", "EDUCATION", "SKILLS", "PROJECTS")
-    5. Job entries: Format as "Job Title | Company Name | Start Date - End Date" on one line, followed by bullet points
-    6. Bullet points: Start each line with "• " (bullet symbol and space)
-    7. Education entries: Format as "Degree | University | Year" or similar
-    8. Skills: List skills separated by commas or as bullet points
+    3. Section headers: ALL CAPS on separate lines (e.g., "PROFESSIONAL SUMMARY", "EXPERIENCE", "EDUCATION", "SKILLS", "PROJECTS", "ACTIVITIES", "ADDITIONAL")
+    
+    IMPORTANT: If you add a professional summary, objective, or profile, it MUST be formatted as a proper section:
+    - Include a section header: "SUMMARY", "PROFESSIONAL SUMMARY", "OBJECTIVE", or "PROFILE" (in ALL CAPS on its own line)
+    - Place the summary content on lines following the header
+    - Do NOT place summary text on line 3 (after contact info) without a section header - it will not be rendered correctly
+    
+    5. Work Experience entries: Format as follows:
+       - First line: "Company Name | Location | Start Date - End Date" (all on one line with | separators)
+       - Second line: Job Title (regular text, not bold)
+       - Following lines: Bullet points starting with "• "
+    
+    6. Education entries: Format as follows:
+       - First line: "Institution Name | Location | Dates" (all on one line with | separators)
+       - Second line: Degree/Program name (regular text)
+       - Following lines: Additional details (GPA, coursework, etc.)
+    
+    7. Projects entries: Format as follows:
+       - First line: "Project Name | Date" (all on one line with | separator)
+       - Following lines: Bullet points starting with "• "
+    
+    8. Activities entries: Format as follows:
+       - First line: "Organization Name | Location | Dates" (all on one line with | separators)
+       - Second line: Role name (regular text)
+       - Following lines: Bullet points starting with "• " (if applicable)
+    
+    9. Additional section entries: Format as "Category: content" on same line (e.g., "Technical Skills: Python, R, SQL" or "Languages: English (Native), Spanish (Fluent)")
+    
+    10. Bullet points: Always start each line with "• " (bullet symbol and space)
     
     Use consistent formatting throughout and ensure proper spacing between sections.
     """

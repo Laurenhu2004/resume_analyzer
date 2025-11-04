@@ -3,8 +3,8 @@ import re
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable
-from reportlab.lib.enums import TA_LEFT, TA_CENTER
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, HRFlowable, Table, TableStyle
+from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT
 from reportlab.lib.colors import black, HexColor
 
 
@@ -19,10 +19,10 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
-        leftMargin=0.75 * inch,
-        rightMargin=0.75 * inch,
-        topMargin=0.75 * inch,
-        bottomMargin=0.75 * inch
+        leftMargin=0.5 * inch,
+        rightMargin=0.5 * inch,
+        topMargin=0.5 * inch,
+        bottomMargin=0.5 * inch
     )
     
     story = []
@@ -32,12 +32,12 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
     name_style = ParagraphStyle(
         'NameStyle',
         parent=styles['Normal'],
-        fontSize=20,
+        fontSize=22,
         fontName='Helvetica-Bold',
         textColor=black,
         alignment=TA_CENTER,
         spaceAfter=6,
-        leading=24
+        leading=26
     )
     
     contact_style = ParagraphStyle(
@@ -54,24 +54,47 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
     section_header_style = ParagraphStyle(
         'SectionHeaderStyle',
         parent=styles['Normal'],
-        fontSize=13,
+        fontSize=12,
         fontName='Helvetica-Bold',
         textColor=black,
         alignment=TA_LEFT,
-        spaceBefore=12,
-        spaceAfter=6,
-        leading=15
+        spaceBefore=14,
+        spaceAfter=4,
+        leading=14
     )
     
-    job_title_style = ParagraphStyle(
-        'JobTitleStyle',
+    company_institution_style = ParagraphStyle(
+        'CompanyInstitutionStyle',
         parent=styles['Normal'],
         fontSize=11,
         fontName='Helvetica-Bold',
         textColor=black,
         alignment=TA_LEFT,
         spaceAfter=2,
-        leading=13
+        leading=13,
+        leftIndent=6
+    )
+    
+    job_title_style = ParagraphStyle(
+        'JobTitleStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName='Helvetica',
+        textColor=black,
+        alignment=TA_LEFT,
+        spaceAfter=4,
+        leading=12
+    )
+    
+    date_location_style = ParagraphStyle(
+        'DateLocationStyle',
+        parent=styles['Normal'],
+        fontSize=10,
+        fontName='Helvetica',
+        textColor=black,
+        alignment=TA_RIGHT,
+        spaceAfter=2,
+        leading=12
     )
     
     company_date_style = ParagraphStyle(
@@ -79,7 +102,7 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
         parent=styles['Normal'],
         fontSize=10,
         fontName='Helvetica',
-        textColor=HexColor('#4a5568'),
+        textColor=black,
         alignment=TA_LEFT,
         spaceAfter=4,
         leading=12
@@ -92,7 +115,7 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
         fontName='Helvetica',
         textColor=black,
         alignment=TA_LEFT,
-        leftIndent=18,
+        leftIndent=0,
         spaceAfter=3,
         leading=12,
         bulletIndent=9
@@ -135,7 +158,7 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
         'CERTIFICATIONS', 'CERTIFICATES', 'LICENSES',
         'AWARDS', 'ACHIEVEMENTS', 'HONORS',
         'PUBLICATIONS', 'PUBLICATIONS & RESEARCH',
-        'LANGUAGES', 'LANGUAGE SKILLS'
+        'LANGUAGES', 'LANGUAGE SKILLS', 'COMMUNITY INVOLVEMENT'
     }
     
     # Parse content
@@ -188,6 +211,56 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
             line_index += 1
             continue
         
+        # Skills section (often comma-separated or bullet points)
+        # Check BEFORE section header detection to avoid misclassifying skills content as headers
+        # But first check if this line is actually a new section header - if so, let it be processed below
+        if current_section and 'SKILLS' in current_section:
+            # Check if this line is a section header - be STRICT to avoid false positives
+            # Only skip if it's EXACTLY a section keyword (not just contains one) and clearly a standalone header
+            line_upper_check = line.upper().strip()
+            # Exact match only - don't use "contains" to avoid matching skills content that mentions keywords
+            # Skills content often has commas, bullets, or multiple words - section headers don't
+            is_new_section_header = (
+                line_upper_check in section_keywords and
+                # Must be clearly a standalone header: short, no separators/bullets/commas
+                len(line) < 30 and 
+                not '|' in line and 
+                not ',' in line and  # Skills often have commas
+                not line.strip().startswith(('•', '-', '*', '·'))  # Skills might be bulleted
+            )
+            # If it's a new section header, skip processing here and let section header detection handle it
+            if not is_new_section_header:
+                # If comma-separated, keep as single line
+                safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                story.append(Paragraph(safe_line, body_style))
+                line_index += 1
+                continue
+        
+        # Summary/Objective/Profile section
+        # Check BEFORE section header detection to avoid misclassifying summary content as headers
+        # But first check if this line is actually a new section header - if so, let it be processed below
+        if current_section and ('SUMMARY' in current_section or 'OBJECTIVE' in current_section or 'PROFILE' in current_section):
+            # Check if this line is a section header - be STRICT to avoid false positives
+            # Only skip if it's EXACTLY a section keyword (not just contains one) and clearly a standalone header
+            line_upper_check = line.upper().strip()
+            # Exact match only - don't use "contains" to avoid matching summary content that mentions keywords
+            # Summary content can be multi-line paragraphs - section headers are short and standalone
+            is_new_section_header = (
+                line_upper_check in section_keywords and
+                # Must be clearly a standalone header: short, no separators/bullets/commas
+                len(line) < 30 and 
+                not '|' in line and 
+                not ',' in line and  # Summary might have commas
+                not line.strip().startswith(('•', '-', '*', '·'))  # Summary might be bulleted
+            )
+            # If it's a new section header, skip processing here and let section header detection handle it
+            if not is_new_section_header:
+                # Escape HTML special characters
+                safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+                story.append(Paragraph(safe_line, summary_style))
+                line_index += 1
+                continue
+        
         # Detect section headers (ALL CAPS, or common section keywords)
         # Exclude lines that start with bullet characters (already handled above)
         line_upper = line.upper().strip()
@@ -202,10 +275,10 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
             # Add horizontal line before section header
             if story and not isinstance(story[-1], Spacer):
                 story.append(Spacer(1, 0.1 * inch))
-            story.append(HRFlowable(width="100%", thickness=1, lineCap='round', color=black))
-            story.append(Spacer(1, 0.05 * inch))
+            story.append(HRFlowable(width="100%", thickness=0.5, lineCap='round', color=black))
+            story.append(Spacer(1, 0.04 * inch))
             story.append(Paragraph(line.upper(), section_header_style))
-            story.append(Spacer(1, 0.05 * inch))
+            story.append(Spacer(1, 0.04 * inch))
             line_index += 1
             continue
         
@@ -213,40 +286,150 @@ def generate_pdf_from_text(content: str, filename: str = "improved_resume.pdf") 
         if '|' in line and (date_pattern.search(line) or current_section and 'EXPERIENCE' in current_section):
             parts = [p.strip() for p in line.split('|')]
             if len(parts) >= 2:
-                # First part is usually job title
-                job_title = parts[0]
-                company_and_date = ' | '.join(parts[1:])
-                story.append(Paragraph(job_title, job_title_style))
-                story.append(Paragraph(company_and_date, company_date_style))
+                # Parse: Company Name | Location | Dates
+                # or: Job Title | Company | Location | Dates
+                # Try to detect if first part is company or job title based on context
+                if len(parts) >= 3:
+                    # Likely format: Company | Location | Dates
+                    company_name = parts[0]
+                    location_date = ' | '.join(parts[1:])
+                    # Create table for side-by-side layout
+                    table_data = [
+                        [Paragraph(company_name, company_institution_style), 
+                         Paragraph(location_date, date_location_style)]
+                    ]
+                    table = Table(table_data, colWidths=[doc.width * 0.6, doc.width * 0.4])
+                    table.setStyle(TableStyle([
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('LEFTPADDING', (0, 0), (0, 0), 0),
+                        ('RIGHTPADDING', (1, 0), (1, 0), 0),
+                        ('RIGHTPADDING', (0, 0), (0, 0), 0),
+                        ('TOPPADDING', (0, 0), (-1, -1), 0),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                    ]))
+                    story.append(table)
+                    # Next line should be job title
+                    if line_index + 1 < len(lines):
+                        next_line = lines[line_index + 1].strip()
+                        if next_line and not next_line.startswith(('•', '-', '*', '·')) and '|' not in next_line:
+                            story.append(Paragraph(next_line, job_title_style))
+                            line_index += 1
+                else:
+                    # Fallback: First part is job title, rest is company/date
+                    job_title = parts[0]
+                    company_and_date = ' | '.join(parts[1:])
+                    story.append(Paragraph(job_title, job_title_style))
+                    story.append(Paragraph(company_and_date, company_date_style))
                 line_index += 1
                 continue
         
-        # Detect education entries (format: Degree | University | Year)
+        # Detect education entries (format: Institution | Location | Dates)
         if '|' in line and current_section and 'EDUCATION' in current_section:
             parts = [p.strip() for p in line.split('|')]
             if len(parts) >= 2:
-                degree = parts[0]
-                rest = ' | '.join(parts[1:])
-                story.append(Paragraph(degree, job_title_style))
-                story.append(Paragraph(rest, company_date_style))
+                # Format: Institution Name | Location | Dates
+                if len(parts) >= 3:
+                    institution_name = parts[0]
+                    location_date = ' | '.join(parts[1:])
+                    # Create table for side-by-side layout
+                    table_data = [
+                        [Paragraph(institution_name, company_institution_style), 
+                         Paragraph(location_date, date_location_style)]
+                    ]
+                    table = Table(table_data, colWidths=[doc.width * 0.6, doc.width * 0.4])
+                    table.setStyle(TableStyle([
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('LEFTPADDING', (0, 0), (0, 0), 0),
+                        ('RIGHTPADDING', (1, 0), (1, 0), 0),
+                        ('RIGHTPADDING', (0, 0), (0, 0), 0),
+                        ('TOPPADDING', (0, 0), (-1, -1), 0),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                    ]))
+                    story.append(table)
+                    # Next line should be degree/program
+                    if line_index + 1 < len(lines):
+                        next_line = lines[line_index + 1].strip()
+                        if next_line and not next_line.startswith(('•', '-', '*', '·')) and '|' not in next_line:
+                            story.append(Paragraph(next_line, job_title_style))
+                            line_index += 1
+                else:
+                    # Fallback: First part is degree, rest is institution/date
+                    degree = parts[0]
+                    rest = ' | '.join(parts[1:])
+                    story.append(Paragraph(degree, job_title_style))
+                    story.append(Paragraph(rest, company_date_style))
                 line_index += 1
                 continue
         
-        # Summary/Objective section (typically appears early, before experience)
-        if current_section and ('SUMMARY' in current_section or 'OBJECTIVE' in current_section or 'PROFILE' in current_section):
-            # Escape HTML special characters
-            safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-            story.append(Paragraph(safe_line, summary_style))
-            line_index += 1
-            continue
+        # Projects section - similar to work experience
+        if current_section and ('PROJECT' in current_section or 'PROJECTS' in current_section):
+            if '|' in line:
+                parts = [p.strip() for p in line.split('|')]
+                if len(parts) >= 2:
+                    project_name = parts[0]
+                    date = ' | '.join(parts[1:]) if len(parts) > 1 else parts[1]
+                    # Create table for side-by-side layout
+                    table_data = [
+                        [Paragraph(project_name, company_institution_style), 
+                         Paragraph(date, date_location_style)]
+                    ]
+                    table = Table(table_data, colWidths=[doc.width * 0.6, doc.width * 0.4])
+                    table.setStyle(TableStyle([
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('LEFTPADDING', (0, 0), (0, 0), 0),
+                        ('RIGHTPADDING', (1, 0), (1, 0), 0),
+                        ('RIGHTPADDING', (0, 0), (0, 0), 0),
+                        ('TOPPADDING', (0, 0), (-1, -1), 0),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                    ]))
+                    story.append(table)
+                    line_index += 1
+                    continue
         
-        # Skills section (often comma-separated or bullet points)
-        if current_section and 'SKILLS' in current_section:
-            # If comma-separated, keep as single line
-            safe_line = line.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
-            story.append(Paragraph(safe_line, body_style))
-            line_index += 1
-            continue
+        # Activities section - similar to work experience
+        if current_section and 'ACTIVIT' in current_section:
+            if '|' in line:
+                parts = [p.strip() for p in line.split('|')]
+                if len(parts) >= 3:
+                    organization_name = parts[0]
+                    location_date = ' | '.join(parts[1:])
+                    # Create table for side-by-side layout
+                    table_data = [
+                        [Paragraph(organization_name, company_institution_style), 
+                         Paragraph(location_date, date_location_style)]
+                    ]
+                    table = Table(table_data, colWidths=[doc.width * 0.6, doc.width * 0.4])
+                    table.setStyle(TableStyle([
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('LEFTPADDING', (0, 0), (0, 0), 0),
+                        ('RIGHTPADDING', (1, 0), (1, 0), 0),
+                        ('RIGHTPADDING', (0, 0), (0, 0), 0),
+                        ('TOPPADDING', (0, 0), (-1, -1), 0),
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                    ]))
+                    story.append(table)
+                    # Next line should be role
+                    if line_index + 1 < len(lines):
+                        next_line = lines[line_index + 1].strip()
+                        if next_line and not next_line.startswith(('•', '-', '*', '·')) and '|' not in next_line:
+                            story.append(Paragraph(next_line, job_title_style))
+                            line_index += 1
+                    line_index += 1
+                    continue
+        
+        # Additional section - format with inline category headers
+        if current_section and 'ADDITIONAL' in current_section:
+            # Look for pattern like "Category: content"
+            if ':' in line and not line.strip().startswith(('•', '-', '*', '·')):
+                parts = line.split(':', 1)
+                if len(parts) == 2:
+                    category = parts[0].strip().replace('&', '&amp;')
+                    content = parts[1].strip().replace('&', '&amp;')
+                    # Format as bold category followed by content on same line
+                    formatted_line = f'<b>{category}:</b> {content}'
+                    story.append(Paragraph(formatted_line, body_style))
+                    line_index += 1
+                    continue
         
         # Default: regular body text
         is_first_line = False
