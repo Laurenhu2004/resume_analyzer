@@ -1,6 +1,7 @@
 # Resume Analyzer
 
 A full-stack web application that uses ChatGPT to provide feedback on resumes and produce improved versions in PDFs. Built with React, FastAPI, PostgreSQL, and OpenAI GPT-4.
+Video demo: https://youtu.be/mfhnTMB_L3E?si=vSjRfVzmXSVfHGXc
 
 ## Features
 
