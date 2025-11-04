@@ -42,7 +42,17 @@ async def analyze_resume(resume_text: str, target_role: Optional[str] = None) ->
         "improved_content": "<complete improved version of the resume as plain text, maintaining professional format with sections, headings, and bullet points>"
     }
     
-    Make sure the improved_content is well-formatted and ready to use as a resume.
+    CRITICAL: Format the improved_content as follows for proper PDF generation:
+    1. First line: Full name only (no contact info)
+    2. Second line: Contact information separated by " | " (e.g., "email@example.com | (555) 123-4567 | City, State | linkedin.com/in/name")
+    3. Optional third line: Professional summary or objective (if applicable)
+    4. Section headers: ALL CAPS on separate lines (e.g., "EXPERIENCE", "EDUCATION", "SKILLS", "PROJECTS")
+    5. Job entries: Format as "Job Title | Company Name | Start Date - End Date" on one line, followed by bullet points
+    6. Bullet points: Start each line with "• " (bullet symbol and space)
+    7. Education entries: Format as "Degree | University | Year" or similar
+    8. Skills: List skills separated by commas or as bullet points
+    
+    Use consistent formatting throughout and ensure proper spacing between sections.
     """
     
     try:
